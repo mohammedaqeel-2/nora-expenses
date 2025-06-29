@@ -1,5 +1,322 @@
 <!DOCTYPE html>
 <html lang="ar">
-<head><meta charset="UTF-8"><title>مشروعي</title></head>
-<body><h1>مشروع أبو نورة</h1></body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>مبيعات مشروع أبو نورة</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo&display=swap');
+    body {
+      font-family: 'Cairo', Arial, sans-serif;
+      direction: rtl;
+      text-align: right;
+      margin: 20px;
+      background: linear-gradient(135deg, #f0f4c3, #c8e6c9);
+      color: #333;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    header h1 {
+      font-size: 2.8em;
+      margin: 0;
+      color: #2e7d32;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      font-weight: 900;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: 600;
+      margin-bottom: 5px;
+      display: block;
+      color: #2e7d32;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border: 1.5px solid #388e3c;
+      border-radius: 6px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus {
+      border-color: #2e7d32;
+      outline: none;
+    }
+    button {
+      background-color: #388e3c;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #2e7d32;
+    }
+    .btn-danger {
+      background-color: #c62828;
+      margin-top: 10px;
+    }
+    .btn-danger:hover {
+      background-color: #b71c1c;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+    }
+    th {
+      background-color: #388e3c;
+      color: white;
+    }
+    tbody tr:hover {
+      background-color: #f1f8e9;
+    }
+    #totalSales {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #2e7d32;
+      font-weight: bold;
+    }
+    #monthlyTotalsTable {
+      margin-top: 15px;
+      font-size: 1em;
+      color: #4a7f3d;
+      font-weight: 600;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(72, 146, 49, 0.3);
+    }
+    #monthlyTotalsTable th, #monthlyTotalsTable td {
+      border: 1px solid #4a7f3d;
+      padding: 8px 12px;
+    }
+    #monthlyTotalsTable th {
+      background-color: #a5d6a7;
+      color: #1b5e20;
+    }
+    .footer-text {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #4caf50cc;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body onload="init();">
+
+<header>
+  <h1>مبيعات مشروع أبو نورة</h1>
+</header>
+
+<div class="form-group">
+  <label for="client">اسم العميل:</label>
+  <select id="client">
+    <option value="أرياف القصيم">أرياف القصيم</option>
+    <option value="الوادي">الوادي</option>
+    <option value="الصالحية">الصالحية</option>
+    <option value="آخر">آخر</option>
+  </select>
+</div>
+
+<div class="form-group">
+  <label for="quantity">العدد:</label>
+  <input type="number" id="quantity" min="1" inputmode="numeric" pattern="[0-9]*" />
+</div>
+
+<div class="form-group">
+  <label for="price">السعر:</label>
+  <input type="number" id="price" min="0.01" step="0.01" inputmode="decimal" />
+</div>
+
+<div class="form-group">
+  <label for="date">التاريخ:</label>
+  <input type="date" id="date" />
+</div>
+
+<button onclick="addSale()">إضافة</button>
+<button class="btn-danger" onclick="clearSales()">حذف الكل</button>
+<button onclick="printTable()">🖨️ طباعة</button>
+
+<div id="totalSales">إجمالي المبيعات: 0</div>
+
+<!-- جدول مبيعات -->
+<table id="sales">
+  <thead>
+    <tr>
+      <th>اسم العميل</th>
+      <th>العدد</th>
+      <th>السعر</th>
+      <th>التاريخ</th>
+      <th>الإجمالي</th>
+      <th>حذف</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<!-- جدول مجموع كل شهر -->
+<table id="monthlyTotalsTable" style="display:none;">
+  <thead>
+    <tr>
+      <th>الشهر</th>
+      <th>مجموع المبيعات</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div class="footer-text">
+  مشروع أبو نورة للدواجن والحمام &copy; 2025
+</div>
+
+<script>
+  function init() {
+    loadSales();
+  }
+
+  function getStorageKey() {
+    return 'project_sales';
+  }
+
+  function addSale() {
+    const client = document.getElementById('client').value;
+    const quantityStr = document.getElementById('quantity').value;
+    const priceStr = document.getElementById('price').value;
+    const date = document.getElementById('date').value;
+
+    const quantity = parseInt(quantityStr);
+    const price = parseFloat(priceStr);
+
+    if (!client) {
+      alert('يرجى اختيار اسم العميل');
+      return;
+    }
+    if (!quantityStr || isNaN(quantity) || quantity <= 0) {
+      alert('يرجى إدخال عدد صحيح أكبر من صفر');
+      return;
+    }
+    if (!priceStr || isNaN(price) || price <= 0) {
+      alert('يرجى إدخال سعر صحيح أكبر من صفر');
+      return;
+    }
+    if (!date) {
+      alert('يرجى تحديد التاريخ');
+      return;
+    }
+
+    const total = quantity * price;
+    const sale = { client, quantity, price, date, total };
+
+    let sales = JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
+    sales.push(sale);
+    localStorage.setItem(getStorageKey(), JSON.stringify(sales));
+
+    loadSales();
+    clearInputs();
+  }
+
+  function loadSales() {
+    const sales = JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
+    const tbody = document.getElementById('sales').querySelector('tbody');
+    tbody.innerHTML = '';
+
+    let grandTotal = 0;
+    let monthlyTotals = {};
+
+    sales.forEach((sale, index) => {
+      grandTotal += sale.total;
+
+      // حساب المجموع الشهري
+      const month = sale.date.slice(0, 7); // YYYY-MM
+      if (!monthlyTotals[month]) monthlyTotals[month] = 0;
+      monthlyTotals[month] += sale.total;
+
+      const row = tbody.insertRow();
+      row.innerHTML = `
+        <td>${sale.client}</td>
+        <td>${sale.quantity}</td>
+        <td>${sale.price.toFixed(2)}</td>
+        <td>${sale.date}</td>
+        <td>${sale.total.toFixed(2)}</td>
+        <td><button class="btn-danger" onclick="deleteSale(${index})">🗑️</button></td>
+      `;
+    });
+
+    document.getElementById('totalSales').textContent = `إجمالي المبيعات: ${grandTotal.toFixed(2)}`;
+
+    // عرض جدول المجموع الشهري
+    const monthlyTable = document.getElementById('monthlyTotalsTable');
+    const monthlyBody = monthlyTable.querySelector('tbody');
+    monthlyBody.innerHTML = '';
+    const months = Object.keys(monthlyTotals).sort();
+    if (months.length === 0) {
+      monthlyTable.style.display = 'none';
+    } else {
+      monthlyTable.style.display = 'table';
+      months.forEach(month => {
+        const tr = monthlyBody.insertRow();
+        tr.innerHTML = `
+          <td>${month}</td>
+          <td>${monthlyTotals[month].toFixed(2)}</td>
+        `;
+      });
+    }
+  }
+
+  function deleteSale(index) {
+    let sales = JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
+    sales.splice(index, 1);
+    localStorage.setItem(getStorageKey(), JSON.stringify(sales));
+    loadSales();
+  }
+
+  function clearSales() {
+    if (confirm('هل أنت متأكد من حذف جميع المبيعات؟')) {
+      localStorage.removeItem(getStorageKey());
+      loadSales();
+    }
+  }
+
+  function clearInputs() {
+    document.getElementById('quantity').value = '';
+    document.getElementById('price').value = '';
+    document.getElementById('date').value = '';
+  }
+
+  function printTable() {
+    const printContent = document.getElementById('sales').outerHTML;
+    const win = window.open('', '', 'width=900,height=650');
+    win.document.write(`
+      <html dir="rtl"><head>
+      <title>طباعة المبيعات</title>
+      <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: center; }
+        th { background-color: #388e3c; color: white; }
+      </style>
+      </head><body>${printContent}</body></html>
+    `);
+    win.document.close();
+    win.print();
+  }
+</script>
+
+</body>
 </html>
